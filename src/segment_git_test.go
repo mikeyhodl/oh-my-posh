@@ -407,10 +407,11 @@ func bootstrapUpstreamTest(upstream string) *git {
 	env.On("getRuntimeGOOS", nil).Return("unix")
 	props := &properties{
 		values: map[Property]interface{}{
-			GithubIcon:    "GH",
-			GitlabIcon:    "GL",
-			BitbucketIcon: "BB",
-			GitIcon:       "G",
+			GithubIcon:      "GH",
+			GitlabIcon:      "GL",
+			BitbucketIcon:   "BB",
+			AzureDevOpsIcon: "AD",
+			GitIcon:         "G",
 		},
 	}
 	g := &git{
@@ -439,6 +440,16 @@ func TestGetUpstreamSymbolBitBucket(t *testing.T) {
 	g := bootstrapUpstreamTest("bitbucket.org/test")
 	upstreamIcon := g.getUpstreamSymbol()
 	assert.Equal(t, "BB", upstreamIcon)
+}
+
+func TestGetUpstreamSymbolAzureDevOps(t *testing.T) {
+	g := bootstrapUpstreamTest("dev.azure.com/test")
+	upstreamIcon := g.getUpstreamSymbol()
+	assert.Equal(t, "AD", upstreamIcon)
+
+	g = bootstrapUpstreamTest("test.visualstudio.com")
+	upstreamIcon = g.getUpstreamSymbol()
+	assert.Equal(t, "AD", upstreamIcon)
 }
 
 func TestGetUpstreamSymbolGit(t *testing.T) {
@@ -756,5 +767,30 @@ func TestGetBranchStatus(t *testing.T) {
 			},
 		}
 		assert.Equal(t, tc.Expected, g.getBranchStatus(), tc.Case)
+	}
+}
+
+func TestTruncateBranch(t *testing.T) {
+	cases := []struct {
+		Case      string
+		Expected  string
+		Branch    string
+		MaxLength interface{}
+	}{
+		{Case: "No limit", Expected: "all-your-base-are-belong-to-us", Branch: "all-your-base-are-belong-to-us"},
+		{Case: "No limit - larger", Expected: "all-your-base", Branch: "all-your-base-are-belong-to-us", MaxLength: 13},
+		{Case: "No limit - smaller", Expected: "all-your-base", Branch: "all-your-base", MaxLength: 13},
+		{Case: "Invalid setting", Expected: "all-your-base", Branch: "all-your-base", MaxLength: "burp"},
+	}
+
+	for _, tc := range cases {
+		g := &git{
+			props: &properties{
+				values: map[Property]interface{}{
+					BranchMaxLength: tc.MaxLength,
+				},
+			},
+		}
+		assert.Equal(t, tc.Expected, g.truncateBranch(tc.Branch), tc.Case)
 	}
 }

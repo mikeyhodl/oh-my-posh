@@ -1,6 +1,25 @@
 # Powershell doesn't default to UTF8 just yet, so we're forcing it as there are too many problems
 # that pop up when we don't
 [console]::InputEncoding = [console]::OutputEncoding = New-Object System.Text.UTF8Encoding
+$env:POWERLINE_COMMAND = "oh-my-posh"
+$env:CONDA_PROMPT_MODIFIER = $false
+
+# specific module support (disabled by default)
+function Set-DefaultEnvValue {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $Name
+    )
+
+    $value = [System.Environment]::GetEnvironmentVariable($Name)
+    if ($value -eq $null) {
+        [System.Environment]::SetEnvironmentVariable($Name, $false)
+    }
+}
+Set-DefaultEnvValue("AZ_ENABLED")
+Set-DefaultEnvValue("POSH_GIT_ENABLED")
 
 $global:PoshSettings = New-Object -TypeName PSObject -Property @{
     Theme = "";
@@ -11,26 +30,16 @@ $global:omp_lastHistoryId = -1
 
 $config = "::CONFIG::"
 if (Test-Path $config) {
-    $global:PoshSettings.Theme = (Resolve-Path -Path $config).Path
+    $global:PoshSettings.Theme = (Resolve-Path -Path $config).ProviderPath
 }
 
 function global:Set-PoshContext {}
 
 function global:Initialize-ModuleSupport {
-    if (Get-Module -Name "posh-git") {
+    if ($env:POSH_GIT_ENABLED -eq $true -and (Get-Module -Name "posh-git")) {
         [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSProvideCommentHelp', '', Justification = 'Variable used later(not in this scope)')]
         $global:GitStatus = Get-GitStatus
         $env:POSH_GIT_STATUS = Write-GitStatus -Status $global:GitStatus
-    }
-
-
-    if ($null -eq $env:AZ_ENABLED) {
-        if (Get-Module -ListAvailable -Name "Az.Accounts") {
-            $env:AZ_ENABLED = $true
-        }
-        else {
-            $env:AZ_ENABLED = $false
-        }
     }
 
     $env:AZ_SUBSCRIPTION_NAME = $null
@@ -38,10 +47,11 @@ function global:Initialize-ModuleSupport {
 
     if ($env:AZ_ENABLED -eq $true) {
         try {
-            $subscription = Get-AzContext | Select-Object -ExpandProperty "Subscription" | Select-Object "Name", "Id"
+            $subscription = Get-AzContext | Select-Object -ExpandProperty "Subscription" | Select-Object "Name", "Id", "Account"
             if ($null -ne $subscription) {
                 $env:AZ_SUBSCRIPTION_NAME = $subscription.Name
                 $env:AZ_SUBSCRIPTION_ID = $subscription.Id
+                $env:AZ_SUBSCRIPTION_ACCOUNT = $subscription.Account
             }
         }
         catch {}
@@ -138,12 +148,10 @@ function global:Export-PoshTheme {
     $config = $global:PoshSettings.Theme
     $omp = "::OMP::"
     $configString = @(&$omp --config="$config" --config-format="$Format" --print-config 2>&1)
-
     # if no path, copy to clipboard by default
     if ($FilePath -ne "") {
-        if ($FilePath.StartsWith('~')) {
-            $FilePath = $FilePath.Replace('~', $HOME)
-        }
+        #https://stackoverflow.com/questions/3038337/powershell-resolve-path-that-might-not-exist
+        $FilePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($FilePath)
         [IO.File]::WriteAllLines($FilePath, $configString)
     }
     else {

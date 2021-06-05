@@ -152,7 +152,9 @@
             "aws",
             "java",
             "poshgit",
-            "azfunc"
+            "azfunc",
+            "crystal",
+            "dart"
           ]
         },
         "style": {
@@ -631,6 +633,12 @@
                     "description": "Icon/text to display when the upstream is Bitbucket",
                     "default": "\uF171"
                   },
+                  "azure_devops_icon": {
+                    "type": "string",
+                    "title": "Azure DevOps Icon",
+                    "description": "Icon/text to display when the upstream is Azure DevOps",
+                    "default": "\uFD03"
+                  },
                   "git_icon": {
                     "type": "string",
                     "title": "Git Icon",
@@ -673,6 +681,58 @@
           "then": {
             "title": "Golang Segment",
             "description": "https://ohmyposh.dev/docs/golang",
+            "properties": {
+              "properties": {
+                "properties": {
+                  "display_version": {
+                    "$ref": "#/definitions/display_version"
+                  },
+                  "display_mode": {
+                    "$ref": "#/definitions/display_mode"
+                  },
+                  "missing_command_text": {
+                    "$ref": "#/definitions/missing_command_text"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": { "const": "dart" }
+            }
+          },
+          "then": {
+            "title": "Dart Segment",
+            "description": "https://ohmyposh.dev/docs/dart",
+            "properties": {
+              "properties": {
+                "properties": {
+                  "display_version": {
+                    "$ref": "#/definitions/display_version"
+                  },
+                  "display_mode": {
+                    "$ref": "#/definitions/display_mode"
+                  },
+                  "missing_command_text": {
+                    "$ref": "#/definitions/missing_command_text"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": { "const": "crystal" }
+            }
+          },
+          "then": {
+            "title": "Crystal Segment",
+            "description": "https://ohmyposh.dev/docs/crystal",
             "properties": {
               "properties": {
                 "properties": {
@@ -1461,7 +1521,8 @@
                       "dallas",
                       "galveston",
                       "houston",
-                      "amarillo"
+                      "amarillo",
+                      "round"
                     ],
                     "default": "austin"
                   }

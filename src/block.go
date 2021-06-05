@@ -47,6 +47,16 @@ func (b *Block) init(env environmentInfo, writer colorWriter, ansi *ansiUtils) {
 	b.ansi = ansi
 }
 
+func (b *Block) initPlain(env environmentInfo, config *Config) {
+	b.ansi = &ansiUtils{}
+	b.ansi.init(plain)
+	b.writer = &AnsiColor{
+		ansi:               b.ansi,
+		terminalBackground: getConsoleBackgroundColor(env, config.TerminalBackground),
+	}
+	b.env = env
+}
+
 func (b *Block) enabled() bool {
 	if b.Type == LineBreak {
 		return true
@@ -157,7 +167,6 @@ func (b *Block) renderDiamondSegment(text string) {
 }
 
 func (b *Block) renderText(text string) {
-	text = b.ansi.generateHyperlink(text)
 	defaultValue := " "
 	prefix := b.activeSegment.getValue(Prefix, defaultValue)
 	postfix := b.activeSegment.getValue(Postfix, defaultValue)

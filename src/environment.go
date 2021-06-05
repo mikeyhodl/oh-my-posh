@@ -73,6 +73,7 @@ type environmentInfo interface {
 	hasParentFilePath(path string) (fileInfo *fileInfo, err error)
 	isWsl() bool
 	stackCount() int
+	getTerminalWidth() (int, error)
 }
 
 type commandCache struct {
@@ -204,7 +205,7 @@ func (env *environment) runCommand(command string, args ...string) (string, erro
 	if cmd, ok := env.cmdCache.get(command); ok {
 		command = cmd
 	}
-	out, err := exec.Command(command, args...).Output()
+	out, err := exec.Command(command, args...).CombinedOutput()
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			return "", &commandError{

@@ -26,13 +26,14 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
+	github.com/wayneashleyberry/terminal-dimensions v1.0.0
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb
 	golang.org/x/sys v0.0.0-20210324051608-47abb6519492
 	golang.org/x/text v0.3.5
 	howett.net/plist v0.0.0-20201203080718-1454fab16a06 // indirect
 )
 
-replace github.com/distatus/battery v0.10.0 => github.com/JanDeDobbeleer/battery v0.10.0-1
+replace github.com/distatus/battery v0.10.0 => github.com/JanDeDobbeleer/battery v0.10.0-2
 
 replace github.com/gookit/color v1.3.5 => github.com/JanDeDobbeleer/color v1.3.5-1

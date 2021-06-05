@@ -33,7 +33,7 @@ const (
 	pwsh        = "pwsh"
 	fish        = "fish"
 	powershell5 = "powershell"
-	shelly      = "shell"
+	plain       = "shell"
 )
 
 type args struct {
@@ -210,7 +210,7 @@ func main() {
 	}
 	imageCreator.init()
 	match := findNamedRegexMatch(`.*(\/|\\)(?P<STR>.+).omp.(json|yaml|toml)`, *args.Config)
-	err := imageCreator.SavePNG(fmt.Sprintf("%s.png", match[STR]))
+	err := imageCreator.SavePNG(fmt.Sprintf("%s.png", match[str]))
 	if err != nil {
 		fmt.Print(err.Error())
 	}
@@ -223,7 +223,7 @@ func initShell(shell, configFile string) string {
 	}
 	switch shell {
 	case pwsh:
-		return fmt.Sprintf("Invoke-Expression (@(&\"%s\" --print-init --shell=pwsh --config=\"%s\") -join \"`n\")", executable, configFile)
+		return fmt.Sprintf("(@(&\"%s\" --print-init --shell=pwsh --config=\"%s\") -join \"`n\") | Invoke-Expression", executable, configFile)
 	case zsh, bash, fish:
 		return printShellInit(shell, configFile)
 	default:
@@ -276,6 +276,7 @@ func getConsoleBackgroundColor(env environmentInfo, backgroundColorTemplate stri
 	template := &textTemplate{
 		Template: backgroundColorTemplate,
 		Context:  context,
+		Env:      env,
 	}
 	text, err := template.render()
 	if err != nil {

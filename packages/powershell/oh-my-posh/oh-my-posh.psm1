@@ -51,10 +51,11 @@ function Set-PoshPrompt {
 
     $config = ""
     if (Test-Path "$PSScriptRoot/themes/$Theme.omp.json") {
-        $config = "$PSScriptRoot/themes/$Theme.omp.json"
+        $path = "$PSScriptRoot/themes/$Theme.omp.json"
+        $config = (Resolve-Path -Path $path).ProviderPath
     }
     elseif (Test-Path $Theme) {
-        $config = (Resolve-Path -Path $Theme).Path
+        $config = (Resolve-Path -Path $Theme).ProviderPath
     }
     else {
         $config = "$PSScriptRoot/themes/jandedobbeleer.omp.json"
@@ -66,7 +67,7 @@ function Set-PoshPrompt {
     $global:omp_global_sessionstate = $PSCmdlet.SessionState
 
     $poshCommand = Get-PoshCommand
-    Invoke-Expression (& $poshCommand --init --shell=pwsh --config="$config")
+    (& $poshCommand --init --shell=pwsh --config="$config") | Invoke-Expression
 }
 
 function Get-PoshThemes {

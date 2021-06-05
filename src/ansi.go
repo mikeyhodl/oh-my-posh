@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ANSIRegex = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
+	ansiRegex = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
 )
 
 type ansiUtils struct {
@@ -30,10 +30,12 @@ type ansiUtils struct {
 	italic                string
 	underline             string
 	strikethrough         string
+	bashFormat            string
 }
 
 func (a *ansiUtils) init(shell string) {
 	a.shell = shell
+	a.bashFormat = "\\[%s\\]"
 	switch shell {
 	case zsh:
 		a.linechange = "%%{\x1b[%d%s%%}"
@@ -50,7 +52,7 @@ func (a *ansiUtils) init(shell string) {
 		a.escapeLeft = "%{"
 		a.escapeRight = "%}"
 		a.hyperlink = "%%{\x1b]8;;%s\x1b\\%%}%s%%{\x1b]8;;\x1b\\%%}"
-		a.osc99 = "%%{\x1b]9;9;%s\x1b\\%%}"
+		a.osc99 = "%%{\x1b]9;9;\"%s\"\x1b\\%%}"
 		a.bold = "%%{\x1b[1m%%}%s%%{\x1b[22m%%}"
 		a.italic = "%%{\x1b[3m%%}%s%%{\x1b[23m%%}"
 		a.underline = "%%{\x1b[4m%%}%s%%{\x1b[24m%%}"
@@ -70,7 +72,7 @@ func (a *ansiUtils) init(shell string) {
 		a.escapeLeft = "\\["
 		a.escapeRight = "\\]"
 		a.hyperlink = "\\[\x1b]8;;%s\x1b\\\\\\]%s\\[\x1b]8;;\x1b\\\\\\]"
-		a.osc99 = "\\[\x1b]9;9;%s\x1b\\\\\\]"
+		a.osc99 = "\\[\x1b]9;9;\"%s\"\x1b\\\\\\]"
 		a.bold = "\\[\x1b[1m\\]%s\\[\x1b[22m\\]"
 		a.italic = "\\[\x1b[3m\\]%s\\[\x1b[23m\\]"
 		a.underline = "\\[\x1b[4m\\]%s\\[\x1b[24m\\]"
@@ -90,7 +92,7 @@ func (a *ansiUtils) init(shell string) {
 		a.escapeLeft = ""
 		a.escapeRight = ""
 		a.hyperlink = "\x1b]8;;%s\x1b\\%s\x1b]8;;\x1b\\"
-		a.osc99 = "\x1b]9;9;%s\x1b\\"
+		a.osc99 = "\x1b]9;9;\"%s\"\x1b\\"
 		a.bold = "\x1b[1m%s\x1b[22m"
 		a.italic = "\x1b[3m%s\x1b[23m"
 		a.underline = "\x1b[4m%s\x1b[24m"
@@ -105,14 +107,14 @@ func (a *ansiUtils) lenWithoutANSI(text string) int {
 	// replace hyperlinks
 	matches := findAllNamedRegexMatch(`(?P<STR>\x1b]8;;file:\/\/(.+)\x1b\\(?P<URL>.+)\x1b]8;;\x1b\\)`, text)
 	for _, match := range matches {
-		text = strings.ReplaceAll(text, match[STR], match[URL])
+		text = strings.ReplaceAll(text, match[str], match[url])
 	}
 	// replace console title
 	matches = findAllNamedRegexMatch(`(?P<STR>\x1b\]0;(.+)\007)`, text)
 	for _, match := range matches {
-		text = strings.ReplaceAll(text, match[STR], "")
+		text = strings.ReplaceAll(text, match[str], "")
 	}
-	stripped := replaceAllString(ANSIRegex, text, "")
+	stripped := replaceAllString(ansiRegex, text, "")
 	stripped = strings.ReplaceAll(stripped, a.escapeLeft, "")
 	stripped = strings.ReplaceAll(stripped, a.escapeRight, "")
 	runeText := []rune(stripped)
@@ -169,5 +171,26 @@ func (a *ansiUtils) changeLine(numberOfLines int) string {
 }
 
 func (a *ansiUtils) consolePwd(pwd string) string {
+	if strings.HasSuffix(pwd, ":") {
+		pwd += "\\"
+	}
 	return fmt.Sprintf(a.osc99, pwd)
+}
+
+func (a *ansiUtils) escapeText(text string) string {
+	// what to escape/replace is different per shell
+	// maybe we should refactor and maintain a list of characters to escap/replace
+	// like we do in ansi.go for ansi codes
+	switch a.shell {
+	case zsh:
+		// escape double quotes
+		text = strings.ReplaceAll(text, "\"", "\"\"")
+	case bash:
+		// escape backslashes to avoid replacements
+		// https://tldp.org/HOWTO/Bash-Prompt-HOWTO/bash-prompt-escape-sequences.html
+		text = strings.ReplaceAll(text, "\\", "\\\\")
+	}
+	// escape backtick
+	text = strings.ReplaceAll(text, "`", "'")
+	return text
 }
